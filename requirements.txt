@@ -1,0 +1,9 @@
+fastapi
+torch
+rtmlib
+onnxruntime-gpu
+video-reader-rs
+uvicorn
+opencv-python
+tqdm
+python-multipart
