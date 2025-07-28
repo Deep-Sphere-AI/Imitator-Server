@@ -1,22 +1,27 @@
 import torch
 import os
-from torch.serialization import add_safe_globals
-from torch._dynamo.eval_frame import OptimizedModule
+from models.imitator import Imitator
+from config_loader import ConfigLoader
 
 class Model():
     def __init__(self, model_version, model_checkpoint, epoch):
-        self.model_location = f"Assets/Models/{model_version}/{model_checkpoint}/{epoch}/model.pt"
+        self.state_location = f"Assets/Models/{model_version}/{model_checkpoint}/{epoch}/checkpoint.pth"
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        add_safe_globals([OptimizedModule])
         self.load_model()
 
     def load_model(self):
-        checkpoint = torch.load(self.model_location, map_location=self.device, weights_only=True)
-        model_raw = getattr(checkpoint, "_orig_mod", checkpoint)
-        if hasattr(model_raw, "module"):
-            model_raw = model_raw.module
-        self.imitator_model = model_raw
+        model_parameters = ConfigLoader("src/config.toml").load_config()
+        model_parameters.update({
+            "input_size": 133 * 2,
+            "output_size": 3072,
+            "use_checkpoint": False
+        })
+
+        model = Imitator(input_size=model_parameters["input_size"], output_size=model_parameters["output_size"], **model_parameters)
+        state_dict = torch.load(self.state_location)
+        model.load_state_dict(state_dict["model_state"])
+        self.imitator_model = model
         self.imitator_model.to(self.device).eval()
 
     def inference_keypoints(self, keypoints):

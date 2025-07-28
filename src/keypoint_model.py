@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 from tqdm import tqdm
 import cv2
 
-DEBUG = True
+DEBUG = False
 
 class Keypoints_Model:
     def __init__(self):

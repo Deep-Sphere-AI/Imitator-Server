@@ -10,7 +10,7 @@ import tempfile
 import os
 
 app = FastAPI()
-#model = Model(101, 1, 99)
+model = Model(102, 1, 1)
 keypointModel = Keypoints_Model()
 
 app.add_middleware(
