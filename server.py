@@ -10,7 +10,7 @@ import tempfile
 import os
 
 app = FastAPI()
-model = Model(102, 1, 1)
+#model = Model(102, 1, 1)
 keypointModel = Keypoints_Model()
 
 app.add_middleware(
@@ -34,6 +34,7 @@ async def process_video(video: UploadFile):
             tmp_path = tmp.name
 
         keypoints = keypointModel.get_keypoints(tmp_path)
+        
         #embedding_output = model.inference_keypoints(keypoints)
 
     finally:
