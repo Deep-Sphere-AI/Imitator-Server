@@ -1,7 +1,7 @@
 import torch
 import os
-from models.imitator import Imitator
-from config_loader import ConfigLoader
+from .models.imitator import Imitator
+from .config_loader import ConfigLoader
 
 class Model():
     def __init__(self, model_version, model_checkpoint, epoch):
@@ -18,8 +18,8 @@ class Model():
             "use_checkpoint": False
         })
 
-        model = Imitator(input_size=model_parameters["input_size"], output_size=model_parameters["output_size"], **model_parameters)
-        state_dict = torch.load(self.state_location)
+        model = Imitator(**model_parameters)
+        state_dict = torch.load(os.path.join(os.getcwd(), self.state_location))
         model.load_state_dict(state_dict["model_state"])
         self.imitator_model = model
         self.imitator_model.to(self.device).eval()
