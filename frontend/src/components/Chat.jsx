@@ -31,7 +31,7 @@ export default function Chat({ chat, loading, setChat }) {
     <div className="flex flex-col h-full">
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto px-2 space-y-3 scrollbar-thin scrollbar-thumb-blue-400 scrollbar-track-blue-100"
+        className="flex-1 overflow-y-auto px-3 py-2 space-y-3 bg-cloud rounded-xl shadow-inner scrollbar-thin scrollbar-thumb-teal scrollbar-track-white"
       >
         {chat.length === 0 && (
           <div className="text-center text-gray-500 mt-8">
@@ -45,8 +45,8 @@ export default function Chat({ chat, loading, setChat }) {
           <div key={i} className={`mb-2 flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div className={`px-4 py-3 rounded-2xl max-w-xs break-words shadow ${
               m.role === 'user'
-                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white'
-                : 'bg-white text-gray-800 border border-gray-200'
+                ? 'bg-gradient-to-r from-teal to-teal/80 text-white'
+                : 'bg-white text-midnight border border-lilac'
             }`}>
               {m.content}
             </div>
@@ -57,19 +57,29 @@ export default function Chat({ chat, loading, setChat }) {
       </div>
 
       <div className="mt-4 flex space-x-2">
-        <input
-          type="text"
-          placeholder="Type your message..."
-          className="flex-1 px-4 py-2 text-sm text-gray-800 bg-gray-100 border border-gray-300 rounded-full placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 shadow-inner transition"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-        />
+        <div className="flex-1 relative">
+          <input
+            type="text"
+            placeholder="💬 Type your message..."
+            className="w-full px-4 py-3 pr-12 text-sm text-midnight bg-white border-2 border-cloud rounded-full placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-teal focus:border-teal shadow-sm transition-all duration-200"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+          />
+          {input.trim() && (
+            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-teal">
+              💡
+            </div>
+          )}
+        </div>
+
         <button
           onClick={handleSend}
-          className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white px-4 py-2 rounded-full shadow-lg text-sm transition"
+          disabled={!input.trim()}
+          className="bg-gradient-to-r from-teal to-teal/80 hover:scale-110 disabled:from-gray-300 disabled:to-gray-400 text-white px-6 py-3 rounded-full shadow-md text-sm font-medium transition-all duration-200 transform flex items-center space-x-1"
         >
-          Send
+          <span>Send</span>
+          <span className="text-lg animate-pulse">📩</span>
         </button>
       </div>
     </div>
