@@ -16,7 +16,7 @@ export default function App() {
 
   return (
     <div className="h-screen w-screen">
-      <div className="flex flex-row h-full w-full bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="flex flex-row h-full w-full bg-gradient-to-br from-[#2C3E50] via-[#8E44AD]/20 to-[#ECF0F1]">
         <ChatColumn chat={chat} loading={loading} setChat={setChat} />
         <VideoColumn
           recording={recording}

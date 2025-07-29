@@ -65,59 +65,60 @@ export default function VideoRecorder({ recording, setRecording, chat, setChat, 
   }
 
   return (
-    <div className="w-1/2 p-6 flex flex-col items-center bg-gradient-to-b from-gray-900 to-gray-800">
-      <h2 className="text-2xl font-bold mb-6 text-white">📹 Record Your Signs</h2>
+   <div className="w-1/2 p-6 flex flex-col items-center bg-gradient-to-b from-midnight to-[#1e2a38]">
+  <h2 className="text-2xl font-bold mb-6 text-cloud">📹 Record Your Signs</h2>
 
-      <div className="relative mb-6">
-        <video
-          ref={videoRef}
-          autoPlay
-          muted
-          className="w-full h-80 bg-black border-4 border-gray-600 rounded-2xl shadow-2xl object-cover"
-        />
+  <div className="relative mb-6">
+    <video
+      ref={videoRef}
+      autoPlay
+      muted
+      className="w-full h-80 bg-black border-4 border-midnight rounded-2xl shadow-2xl object-cover"
+    />
 
-        {recording && (
-          <div className="absolute top-4 right-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm animate-pulse flex items-center">
-            <div className="w-2 h-2 bg-white rounded-full mr-2"></div>
-            REC
-          </div>
-        )}
-
-        {!videoRef.current?.srcObject && !recording && (
-          <div className="absolute inset-0 flex items-center justify-center bg-gray-800 rounded-2xl">
-            <div className="text-center text-gray-400">
-              <div className="text-6xl mb-4">📸</div>
-              <p>Camera will appear here</p>
-            </div>
-          </div>
-        )}
+    {recording && (
+      <div className="absolute top-4 right-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm animate-pulse flex items-center">
+        <div className="w-2 h-2 bg-white rounded-full mr-2"></div>
+        REC
       </div>
+    )}
 
-      <div className="flex flex-col items-center space-y-4">
-        {!recording ? (
-          <button
-            onClick={startRecording}
-            disabled={loading}
-            className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-8 py-4 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 shadow-lg flex items-center space-x-2 text-lg font-semibold"
-          >
-            <span className="text-2xl">▶️</span>
-            <span>Start Recording</span>
-          </button>
-        ) : (
-          <button
-            onClick={stopRecording}
-            className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-8 py-4 rounded-full transition-all duration-200 transform hover:scale-105 shadow-lg flex items-center space-x-2 text-lg font-semibold animate-pulse"
-          >
-            <span className="text-2xl">⏹</span>
-            <span>Stop Recording</span>
-          </button>
-        )}
-
-        <div className="text-center text-gray-300">
-          <p className="text-sm">Maximum recording time: <span className="font-bold">60 seconds</span></p>
-          <p className="text-xs mt-1 opacity-75">Make sure your signs are clearly visible</p>
+    {!videoRef.current?.srcObject && !recording && (
+      <div className="absolute inset-0 flex items-center justify-center bg-[#1e2a38] rounded-2xl">
+        <div className="text-center text-cloud/60">
+          <div className="text-6xl mb-4">📸</div>
+          <p>Camera will appear here</p>
         </div>
       </div>
+    )}
+  </div>
+
+  <div className="flex flex-col items-center space-y-4">
+    {!recording ? (
+      <button
+        onClick={startRecording}
+        disabled={loading}
+        className="bg-gradient-to-r from-[#1ABC9C] to-[#16A085] hover:from-[#17C3AE] hover:to-[#138D75] text-white px-8 py-4 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 shadow-lg flex items-center space-x-2 text-lg font-semibold"
+      >
+        <span className="text-2xl animate-vibrate">▶️</span>
+        <span>Start Recording</span>
+      </button>
+    ) : (
+      <button
+        onClick={stopRecording}
+        className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-8 py-4 rounded-full transition-all duration-200 transform hover:scale-105 shadow-lg flex items-center space-x-2 text-lg font-semibold animate-pulse"
+      >
+        <span className="text-2xl">⏹</span>
+        <span>Stop Recording</span>
+      </button>
+    )}
+
+    <div className="text-center text-cloud/60">
+      <p className="text-sm">Maximum recording time: <span className="font-bold text-cloud">60 seconds</span></p>
+      <p className="text-xs mt-1">Make sure your signs are clearly visible</p>
     </div>
+  </div>
+</div>
+
   )
 }

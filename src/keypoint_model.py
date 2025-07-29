@@ -63,7 +63,7 @@ class Keypoints_Model:
         for start in range(0, video_length, chunk_size):
             end = min(start + chunk_size, video_length)
             frames = video_reader.decode_fast(start_frame=start, end_frame=end)
-
+            
             with ThreadPoolExecutor(max_workers=8) as executor:
                 chunk_kp = list(tqdm(executor.map(process_single_frame, frames), total=len(frames),
                  desc=f"Frames {start}-{end-1}"))   
