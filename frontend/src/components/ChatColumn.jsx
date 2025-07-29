@@ -1,7 +1,7 @@
 import Chat from './Chat'
 
 export default function ChatColumn({ chat, loading, setChat }) {  return (
-    <div className="w-1/2 border-r border-gray-300 p-6 flex flex-col bg-white shadow-lg">
+<div className="w-1/2 border-r border-gray-300 p-6 flex flex-col h-full bg-white shadow-lg">
       <div className="flex items-center mb-4">
         <div className="w-3 h-3 bg-green-500 rounded-full mr-3 animate-pulse"></div>
         <h2 className="text-2xl font-bold text-gray-800">💬 AI Sign Translator</h2>
