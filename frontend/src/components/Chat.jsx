@@ -60,14 +60,14 @@ export default function Chat({ chat, loading, setChat }) {
         <input
           type="text"
           placeholder="Type your message..."
-          className="flex-1 bg-white border border-gray-300 rounded-2xl px-4 py-2 shadow-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          className="flex-1 px-4 py-2 text-sm text-gray-800 bg-gray-100 border border-gray-300 rounded-full placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 shadow-inner transition"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
         />
         <button
           onClick={handleSend}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-2xl shadow-md transition"
+          className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white px-4 py-2 rounded-full shadow-lg text-sm transition"
         >
           Send
         </button>
