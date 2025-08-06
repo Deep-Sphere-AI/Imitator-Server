@@ -1,72 +1,101 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import numpy as np
 
-from .gcn import unit_gcn, unit_tcn, mstcn
+def partition_adjacency(A:np.ndarray) -> np.ndarray:
+    """
+    Particiona la matriz de adyacencia base A en K=3 subconjuntos para ST-GCN:
+      A0: self-loops (identidad)
+      A1: conexiones directas (A)
+      A2: conexiones a 2 saltos (A^2), excluyendo las de A1 y A0
+    Args:
+        A (np.ndarray): Matriz de adyacencia base (J, J)
+    Returns:
+        np.ndarray de forma (K=3, J, J) con las particiones A0, A1, A2
+    """
+    J = A.shape[0]
+    # A0: self-loops
+    A0 = np.eye(J, dtype=A.dtype)
+
+    # A1: conexiones directas
+    A1 = (A > 0).astype(A.dtype)
+    
+    # A2: vecinos a 2 saltos
+    A2_temp = (A1 @ A1) > 0
+    
+    # Quita conexiones de A1 y A0
+    A2 = np.logical_and(A2_temp, np.logical_not(A1 + A0))
+    A2 = A2.astype(A.dtype)
+    
+    return np.stack([A0, A1, A2])
 
 class STGCNBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, A, stride=1, residual=True, **kwargs):
-        super(STGCNBlock, self).__init__()
-        self.A = A
-
-        gcn_kwargs = {k[4:]: v for k, v in kwargs.items() if k[:4] == 'gcn_'}
-        tcn_kwargs = {k[4:]: v for k, v in kwargs.items() if k[:4] == 'tcn_'}
-        kwargs = {k: v for k, v in kwargs.items() if k[:4] not in ['gcn_', 'tcn_']}
-        assert len(kwargs) == 0, f'Invalid arguments: {kwargs}'
-
-        tcn_type = tcn_kwargs.pop('type', 'unit_tcn')
-        assert tcn_type in ['unit_tcn', 'mstcn']
-        gcn_type = gcn_kwargs.pop('type', 'unit_gcn')
-        assert gcn_type in ['unit_gcn']
-
-        self.gcn = unit_gcn(in_channels, out_channels, self.A, **gcn_kwargs)
-
-        if tcn_type == 'mstcn':
-            self.tcn = mstcn(out_channels, out_channels, 9, stride=stride, **tcn_kwargs)
-        elif tcn_type == 'unit_tcn':
-            self.tcn = unit_tcn(out_channels, out_channels, stride=stride,**tcn_kwargs)
-        
+    """
+    Single ST-GCN block as described in SignFormer-GCN (based on Yan et al. ST-GCN).
+    Args:
+        in_channels (int): Number of input feature channels (C_m).
+        out_channels (int): Number of output feature channels per temporal branch (C_i).
+        A (np.ndarray or tensor): Adjacency matrix of shape (K, N, N) for K partitions.
+        kernel_size (int): Temporal kernel size for all TCNs (odd number).
+        stride (int): Temporal stride.
+    Output:
+        Tensor of shape (B, 3*out_channels, T_out, N)
+    """
+    def __init__(self, in_channels, out_channels, A, kernel_size=3, stride=1):
+        super().__init__()
+        # Adjacency partitions: A_k for k=0..K-1
+        self.register_buffer('A', torch.tensor(A, dtype=torch.float32))  # (K, N, N)
+        self.K, self.N, _ = A.shape
+        # 1x1 Graph conv weights: map in_channels -> out_channels * K
+        self.gconv = nn.Conv2d(in_channels, out_channels * self.K, kernel_size=1)
+        self.bn1 = nn.BatchNorm2d(out_channels * self.K)
+        # Temporal conv branches (3 branches)
+        pad = (kernel_size - 1) // 2
+        self.tcn1 = nn.Conv2d(out_channels, out_channels, kernel_size=(kernel_size, 1),
+                              padding=(pad, 0), stride=(stride, 1))
+        self.tcn2 = nn.Conv2d(out_channels, out_channels, kernel_size=(kernel_size, 1),
+                              padding=(pad, 0), stride=(stride, 1))
+        self.tcn3 = nn.Conv2d(out_channels, out_channels, kernel_size=(kernel_size, 1),
+                              padding=(pad, 0), stride=(stride, 1))
+        self.bn2 = nn.BatchNorm2d(out_channels * 3)
         self.relu = nn.ReLU()
-
-        if not residual:
-            self.residual = lambda x: 0
-        elif (in_channels == out_channels) and (stride == 1):
-            self.residual = lambda x: x
-        else:
-            self.residual = unit_tcn(in_channels, out_channels, kernel_size=1, stride=stride)
         
-    def forward(self, x):
-        res = self.residual(x)
-        x = self.tcn(self.gcn(x)) + res
-        return x
+    def normalize_adj(self, A_k: torch.Tensor) -> torch.Tensor:
+        A_k = A_k + torch.eye(A_k.shape[0], device=A_k.device)
+        deg = A_k.sum(-1)
+        deg_inv_sqrt = torch.pow(deg + 1e-6, -0.5)
+        D = torch.diag(deg_inv_sqrt)
+        return D @ A_k @ D
     
-class SimpleSTGCNBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size_spatial=25, kernel_size_temporal=9):
-        super(SimpleSTGCNBlock, self).__init__()
-        self.spatial_conv = nn.Conv2d(in_channels, out_channels, kernel_size=(1, kernel_size_spatial), padding=(0, kernel_size_spatial // 2))
-        self.temp_conv = nn.Conv2d(out_channels, out_channels, kernel_size=(kernel_size_temporal, 1), padding=(kernel_size_temporal // 2, 0))
-        self.norm = nn.BatchNorm2d(out_channels)
-        
     def forward(self, x):
-        x = self.spatial_conv(x)
-        x = F.relu(x)
-        x = self.temp_conv(x)
-        x = F.relu(x)
-        x = self.norm(x)
-        return x
+        """
+        x: Tensor of shape (B, C_m, T, N)
+        returns: Tensor of shape (B, 3*out_channels, T_out, N)
+        """
+        B, C, T, N = x.shape
+        # 1) Graph convolution
+        # Linear projection to K partitions
+        x_gc = self.gconv(x)                              # (B, K*out, T, N)
+        x_gc = self.bn1(x_gc)
+        # reshape for partitioned multiplication
+        x_gc = x_gc.view(B, self.K, -1, T, N)             # (B, K, out, T, N)
 
-class STGCN(nn.Module):
-    def __init__(self, in_channels, out_channels, num_blocks=2, kernel_size_spatial=25, kernel_size_temporal=9):
-        super(STGCN, self).__init__()
-        self.num_blocks = num_blocks
-        self.blocks = nn.ModuleList()
-        
-        for _ in range(num_blocks):
-            block = SimpleSTGCNBlock(in_channels, out_channels, kernel_size_spatial, kernel_size_temporal)
-            self.blocks.append(block)
-            in_channels = out_channels
-        
-    def forward(self, x):
-        for block in self.blocks:
-            x = block(x)
-        return x
+        out = 0
+        for k in range(self.K):
+            A_k = self.normalize_adj(self.A[k])   # safe normalization
+            xk = x_gc[:, k]
+            # propagate across nodes: einsum over node dimension
+            xk = torch.einsum('bctn,nm->bctm', xk, A_k)
+            out = out + xk
+        out = self.relu(out)
+
+        # 2) Temporal convolutions (3 parallel branches)
+        f1 = self.tcn1(out)
+        f2 = self.tcn2(out)
+        f3 = self.tcn3(out)
+        # concat along channel dim
+        y = torch.cat((f1, f2, f3), dim=1)                # (B, 3*out, T_out, N)
+        y = self.bn2(y)
+        y = self.relu(y)
+        return y

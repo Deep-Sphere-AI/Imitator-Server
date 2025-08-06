@@ -1,10 +1,11 @@
-output_size= 3072
-hidden_size= 1792
-nhead= 16
-ff_dim= 2304
-n_layers= 8
-encoder_dropout = 0.1
-multihead_dropout = 0.35
-sequential_dropout = 0.2
-pool_dim = 512
-use_checkpoint = 512
+[model]
+input_size = 111
+output_size= 2048
+encoder_hidden_size=512
+decoder_hidden_size=1024
+nhead = 8
+ff_dim = 1792
+n_encoder_layers=4
+n_decoder_layers=4
+encoder_dropout = 0.45
+decoder_dropout = 0.45
