@@ -5,15 +5,42 @@ export default function Chat({ chat, loading, setChat }) {
   const [input, setInput] = useState('')
   const scrollRef = useRef(null)
 
-  const handleSend = () => {
+  const handleSend = async () => {
     const trimmed = input.trim()
     if (!trimmed) return
-    setChat([
-      ...chat,
-      { role: 'user', content: trimmed },
-      { role: 'assistant', content: '🤖 (respuesta simulada)' }
+
+    setChat(prev => [
+      ...prev,
+      { role: 'user', content: trimmed }
     ])
-    setInput('')
+    setInput('')                     
+    setLoading(true)                 
+
+    try {
+      const res = await fetch(import.meta.env.VITE_API_URL + '/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [...chat, { role: 'user', content: trimmed }] }),
+      })
+
+      if (!res.ok) throw new Error(`Server responded ${res.status}`)
+
+      const { reply } = await res.json()
+
+      // 5. Append the real assistant reply
+      setChat(prev => [
+        ...prev,
+        { role: 'assistant', content: reply }
+      ])
+    } catch (err) {
+      console.error(err)
+      setChat(prev => [
+        ...prev,
+        { role: 'assistant', content: '⚠️ Something went wrong. Please try again.' }
+      ])
+    } finally {
+      setLoading(false)              // 6. Hide loader
+    }
   }
 
   const handleKeyDown = (e) => {
@@ -24,7 +51,10 @@ export default function Chat({ chat, loading, setChat }) {
   }
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
+    scrollRef.current?.scrollTo({
+      top: scrollRef.current.scrollHeight,
+      behavior: 'smooth'
+    })
   }, [chat, loading])
 
   return (

@@ -4,9 +4,6 @@ import VideoColumn from './components/VideoColumn'
 
 
 
-
-
-
 export default function App() {
   const [chat, setChat] = useState([])
   const [recording, setRecording] = useState(false)
