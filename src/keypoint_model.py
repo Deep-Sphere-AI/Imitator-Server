@@ -10,7 +10,7 @@ import cv2
 
 DEBUG = False
 
-class Keypoints_Model:
+class KeypointsModel:
     def __init__(self):
         self.backend = 'onnxruntime'
         self.device = 'cuda'
@@ -18,7 +18,7 @@ class Keypoints_Model:
 
         self.load_model()
 
-    def load_model(self):
+    def load_model(self):   
         self.model = Custom(
             to_openpose=self.openpose,
             det_class='RTMDet',
